@@ -1,0 +1,14 @@
+{
+    "n_estimators": 100,
+    "max_depth": 5,
+    "learning_rate": 0.05,
+    "random_state": 42,
+    "run_id": "4be09d1961d64e348ef2c9fa9521ebd8",
+    "model_version": "5",
+    "train_time": "2026-01-29 02:30:10",
+    "classes_": [
+        0,
+        1
+    ],
+    "eval_metric": "logloss"
+}
