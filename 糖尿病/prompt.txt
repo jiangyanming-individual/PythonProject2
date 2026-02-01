@@ -1,0 +1,89 @@
+# 任务：基于6种机器学习算法构建糖尿病疾病预测模型
+## 一、基础信息
+1.  任务目标：构建二分类预测模型，预测研究对象是否患有糖尿病（因变量为incident_diab），为糖尿病早期筛查提供数据支撑。
+2.  变量说明：
+    -  因变量（结局变量）：incident_diab（二分类，0=健康无糖尿病，1=糖尿病患病）
+    -  自变量（特征变量）：
+        -  分类变量：ragender（性别）、raeducl（教育程度，三分类）、r1shlta（自评健康程度，五分类）、r1hibpe（是否高血压，二分类）、r1dyslipe（是否高脂血症，二分类）、r1drinkl（是否饮酒，二分类）、r1smoken（是否吸烟，二分类）
+        -  连续变量：r1agey（年龄）、r1mbmi（体重指数）、r1cesd10（抑郁评分）、chronic_disease_count（慢性病数量）、hh1itot_log（家庭年收入，对数转换后）
+3.  数据集文件：charls_diabetes_ml_cleaned_logincome.csv（编码格式为UTF-8，无特殊字符分隔）
+
+## 二、核心任务（分4步执行，步骤不可跳过）
+### 步骤1：数据集拆分与单独保存
+将原始数据集按照因变量incident_diab的取值拆分为2个独立数据集：
+-  正样本数据集：incident_diab=1（糖尿病患者），保存为csv文件，文件名命名为「diabetes_positive_samples.csv」
+-  负样本数据集：incident_diab=0（健康人群），保存为csv文件，文件名命名为「diabetes_negative_samples.csv」
+-  保存要求：保留原始数据的所有列（特征变量+因变量），csv文件表头与原始数据集一致，无额外索引列。
+
+### 步骤2：样本平衡处理（下采样+缺失值处理，严格遵循优先级）
+#### 2.1  负样本处理：随机下采样+缺失值直接剔除
+-  第一步：缺失值剔除（硬过滤）
+  对负样本数据集，筛选出「无缺失值」的样本，需同时满足以下4个特征无空值（NaN/None/空字符串）：hh1itot（注：原始数据集中若存在该列，无则忽略）、hh1itot_log、r1mbmi、r1smoken
+  -  剔除规则：只要上述4个特征中有任意1个存在缺失值，直接剔除该样本
+  -  保留规则：仅保留上述4个特征均有有效数值的负样本，形成「负样本有效数据集」
+-  第二步：随机下采样
+  统计正样本数据集（incident_diab=1）的样本总量（记为N），从「负样本有效数据集」中进行**无放回随机下采样**，抽取N个样本，形成「负样本平衡数据集」
+  -  下采样要求：保证采样随机性，设置随机种子（random_state=42），确保结果可复现
+  -  最终负样本数量与正样本数量完全一致，实现样本类别平衡
+
+#### 2.2  正样本处理：缺失值填充（均值/中位数填充，区分变量类型）
+对正样本数据集（incident_diab=1）进行缺失值填充，不进行下采样/上采样，保留所有样本：
+-  填充规则：
+  -  连续变量（r1agey、r1mbmi、r1cesd10、chronic_disease_count、hh1itot_log）：使用**中位数**填充缺失值（抗异常值干扰更强）
+  -  分类变量（ragender、raeducl、r1shlta、r1hibpe、r1dyslipe、r1drinkl、r1smoken）：使用**众数**填充缺失值（符合分类变量分布特性）
+-  填充要求：基于正样本数据集自身的统计量进行填充（不使用原始数据集/负样本数据集的统计量），填充后形成「正样本平衡数据集」
+
+#### 2.3  平衡数据集整合（可选，用于后续模型训练）
+将「正样本平衡数据集」与「负样本平衡数据集」合并，形成「模型训练总平衡数据集」，保存为「diabetes_balanced_dataset.csv」，用于后续模型训练。
+
+### 步骤3：6种机器学习模型训练、评估与可视化
+#### 3.1  数据准备
+加载步骤2得到的「正样本平衡数据集」和「负样本平衡数据集」，合并后划分训练集与测试集（训练集70%，测试集30%，random_state=42，分层抽样stratify=y，保证类别分布一致）。
+
+#### 3.2  模型选择与参数配置
+使用以下6种二分类算法进行模型训练，采用「合理默认参数+简单调优」（或网格搜索/随机搜索优化关键参数），确保模型具备一定泛化能力：
+1.  逻辑回归（Logistic Regression）
+2.  支持向量机（SVM，分类任务，推荐使用RBF核）
+3.  随机森林（Random Forest Classifier）
+4.  AdaBoost（AdaBoost Classifier）
+5.  XGBoost（XGBClassifier，处理类别不平衡可配置scale_pos_weight）
+6.  LightGBM（LGBMClassifier，优先使用class_weight='balanced'）
+
+#### 3.3  模型评估指标计算
+在测试集上评估每个模型的性能，计算并输出以下4项核心评估指标（保留4位小数）：
+-  准确率（Accuracy, ACC）
+-  受试者工作特征曲线下面积（AUC-ROC, AUC）
+-  马修斯相关系数（Matthews Correlation Coefficient, MCC）
+-  精确率-召回率曲线下面积（AUC-PR, PR-AUC）
+-  额外要求：输出每个模型的混淆矩阵（TN/FP/FN/TP）
+
+#### 3.4  可视化要求
+绘制并保存以下2类曲线（所有模型绘制在同一张图中，便于对比，添加图例、标题、坐标轴标签，分辨率300dpi）：
+1.  AUC-ROC曲线：横轴为假阳性率（FPR），纵轴为真阳性率（TPR）
+2.  AUC-PR曲线：横轴为召回率（Recall），纵轴为精确率（Precision）
+-  可视化格式：保存为PNG文件，文件名分别为「model_auc_roc_curve.png」「model_auc_pr_curve.png」
+
+### 步骤4：SHAP值分析与可视化
+基于步骤3中表现最优的模型（优先选择AUC最高或MCC最高的模型），进行SHAP值分析，绘制并保存以下3类SHAP可视化图（分辨率300dpi）：
+1.  SHAP汇总图（Summary Plot）：展示所有特征对模型预测结果的影响，按特征重要性排序，区分正负样本（颜色区分）
+2.  SHAP依赖图（Dependence Plot）：选择前5个重要特征，分别绘制每个特征与SHAP值的关系，展示特征对预测结果的边际效应
+3.  SHAP力导向图（Force Plot）：选择1个正样本和1个负样本，展示单个样本的特征贡献情况，解释模型为何预测该样本为患病/健康
+-  输出要求：SHAP图保存为PNG文件，文件名分别为「shap_summary_plot.png」「shap_dependence_plots.png」「shap_force_plots.png」，同时输出特征重要性排名表（按SHAP均值绝对值排序）
+
+## 三、技术要求
+1.  编程语言：Python 3.8+
+2.  核心库要求：
+    -  数据处理：pandas、numpy
+    -  样本处理：sklearn（train_test_split、resample、SimpleImputer）
+    -  模型训练：sklearn、xgboost、lightgbm
+    -  模型评估：sklearn（metrics）、matplotlib/seaborn
+    -  SHAP分析：shap
+3.  可复现性：所有随机操作均设置random_state=42，确保结果可重复
+4.  鲁棒性：处理数据时增加异常值检测（可选）、缺失值统计，输出数据处理报告（可选）
+
+## 四、最终输出
+1.  4个csv数据文件：正样本、负样本、负样本有效、平衡总数据集
+2.  模型评估结果表格（txt/csv格式，包含6个模型的ACC/AUC/MCC/PR-AUC）
+3.  5张可视化图片：2张模型评估曲线、3张SHAP分析图
+4.  完整可运行的Python代码（带注释，分模块编写，便于调试和修改）
+5.  简要分析报告（可选，包含模型性能对比、核心影响特征、结论与建议）

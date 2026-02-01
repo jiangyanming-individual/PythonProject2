@@ -11,7 +11,7 @@ def view_serialized_file(file_path):
         # 步骤 1：加载序列化文件（joblib 兼容 .joblib 和 .pkl 格式）
         print(f"正在加载文件：{file_path}")
         obj = joblib.load(file_path)
-        print(f"✅ 文件加载成功，对象类型：{type(obj)}\n")
+        print(f"文件加载成功，对象类型：{type(obj)}\n")
 
         # 步骤 2：方式 1 - 直接打印对象（查看基本信息）
         print("=== 方式 1：直接打印对象（基本信息）===")
@@ -47,9 +47,9 @@ def view_serialized_file(file_path):
         return obj
 
     except FileNotFoundError:
-        print(f"❌ 错误：文件 {file_path} 不存在")
+        print(f"错误：文件 {file_path} 不存在")
     except Exception as e:
-        print(f"❌ 错误：加载/查看文件失败 - {e}")
+        print(f"错误：加载/查看文件失败 - {e}")
 
 if __name__ == "__main__":
     # 调用函数查看文件内容

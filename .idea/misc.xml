@@ -3,4 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="D:\Environment\Anaconda" />
   </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="pytorch-gpu" project-jdk-type="Python SDK" />
 </project>

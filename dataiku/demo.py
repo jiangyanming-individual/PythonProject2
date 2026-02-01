@@ -23,20 +23,20 @@ FILLNA_VALUE = 0.0  # 新增：缺失值填充值（和训练时保持一致）
 def load_model_metadata():
     """新增：加载模型元数据，用于溯源和参数验证"""
     if not METADATA_PATH or not os.path.exists(METADATA_PATH):
-        print(f"⚠️  元数据文件 {METADATA_PATH} 不存在，跳过元数据加载")
+        print(f"元数据文件 {METADATA_PATH} 不存在，跳过元数据加载")
         return None
     try:
         with open(METADATA_PATH, "r", encoding="utf-8") as f:
             metadata = json.load(f)
         print("=" * 60)
-        print("✅ 模型元数据加载成功！")
+        print("模型元数据加载成功！")
         print(f"模型版本：{metadata.get('model_version', '未知')} | 训练时间：{metadata.get('train_time', '未知')}")
         print(
             f"核心参数：n_estimators={metadata.get('n_estimators', '未知')}, max_depth={metadata.get('max_depth', '未知')}")
         print("=" * 60)
         return metadata
     except Exception as e:
-        print(f"⚠️  加载元数据失败：{e}，跳过元数据加载")
+        print(f"加载元数据失败：{e}，跳过元数据加载")
         return None
 
 
@@ -48,7 +48,7 @@ def predict_with_xgboost_joblib():
         # 1. 加载 .joblib 原生XGBoost模型
         print(f"\n正在加载模型：{MODEL_PATH}")
         model = joblib.load(MODEL_PATH)
-        print("✅ 模型加载成功！")
+        print("模型加载成功！")
 
         # 2. 读取 CSV 测试集（优化：添加编码兼容、缺失文件友好提示）
         print(f"\n正在读取测试集：{TEST_CSV_PATH}")
@@ -57,7 +57,7 @@ def predict_with_xgboost_joblib():
             test_df = pd.read_csv(TEST_CSV_PATH, encoding="utf-8-sig")
         except:
             test_df = pd.read_csv(TEST_CSV_PATH, encoding="gbk")
-        print(f"✅ 测试集读取成功，数据形状：{test_df.shape}")
+        print(f"测试集读取成功，数据形状：{test_df.shape}")
         print(f"测试集前5行预览：\n{test_df.head()}")
 
         # 3. 数据预处理（大幅优化：增加缺失值填充、数据类型校验、特征列清洗）
@@ -85,7 +85,7 @@ def predict_with_xgboost_joblib():
             X_test = X_test.drop(columns=non_numeric_cols)
             print(f"⚠️  检测到非数值型特征列，已自动删除：{non_numeric_cols}")
 
-        print(f"✅ 特征数据预处理完成，特征形状：{X_test.shape}（特征列数：{len(X_test.columns)}）")
+        print(f"特征数据预处理完成，特征形状：{X_test.shape}（特征列数：{len(X_test.columns)}）")
 
         # 4. 执行预测（保留原有逻辑，增加预测异常捕获）
         print("\n正在执行模型预测...")
@@ -100,7 +100,7 @@ def predict_with_xgboost_joblib():
             y_pred_proba = model.predict_proba(X_test)
         except AttributeError:
             print("⚠️  模型不支持预测概率，跳过概率输出")
-        print("✅ 预测完成！")
+        print("预测完成！")
 
         # 5. 整理预测结果（保留原有逻辑，优化预览格式）
         result_df = test_df.copy()
